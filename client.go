@@ -63,7 +63,6 @@ func (c *Client) readInput() {
 			c.err(fmt.Errorf("unknown command: %s", cmd))
 		}
 	}
-
 }
 
 func (c *Client) err(err error) {

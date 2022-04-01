@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 type Server struct {
@@ -76,21 +78,33 @@ func (s *Server) join(c *Client, args []string) {
 }
 
 func (s *Server) listRooms(c *Client, args []string) {
+	var rooms []string
+	for name := range s.rooms {
+		rooms = append(rooms, name)
+	}
 
+	c.msg(fmt.Sprintf("available rooms are: %s", strings.Join(rooms, ", ")))
 }
 
 func (s *Server) msg(c *Client, args []string) {
-
+	if c.room == nil {
+		c.err(errors.New("you must join the room first"))
+		return
+	}
+	c.room.broadcast(c, c.nick+":"+strings.Join(args[1:], " "))
 }
 
 func (s *Server) quit(c *Client, args []string) {
+	log.Printf("client has disconnected : %s", c.conn.RemoteAddr().String())
 
+	s.quitCurrentRoom(c)
+	c.msg("sad to see you go :( ")
+	c.conn.Close()
 }
 
 func (s *Server) quitCurrentRoom(c *Client) {
 	if c.room != nil {
 		delete(c.room.members, c.conn.RemoteAddr())
 		c.room.broadcast(c, fmt.Sprintf("%s has left thre room", c.nick))
-
 	}
 }
